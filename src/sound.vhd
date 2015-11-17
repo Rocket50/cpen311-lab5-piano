@@ -2,10 +2,12 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.all;
 USE ieee.numeric_std.all;
 USE work.sample_generator_decs.all;
+use work.ROMDecoder_decs.all;
 
 ENTITY sound IS
 	PORT (HEX0, HEX1, HEX2, HEX3, HEX4, HEX5, HEX6, HEX7 : out std_logic_vector(6 downto 0);
 	    CLOCK_50,AUD_DACLRCK, AUD_ADCLRCK, AUD_BCLK,AUD_ADCDAT			:IN STD_LOGIC;
+	    LEDR : OUT STD_LOGIC_VECTOR(17 downto 0);
 			CLOCK_27															:IN STD_LOGIC;
 			KEY																:IN STD_LOGIC_VECTOR(3 DOWNTO 0);
 			SW																	:IN STD_LOGIC_VECTOR(17 downto 0);
@@ -38,13 +40,18 @@ ARCHITECTURE Behavior OF sound IS
 				AUD_DACDAT													:OUT STD_LOGIC);
 	END COMPONENT;
 	
-	
+	COMPONENT musicROM IS
+	   PORT(address		: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
+		      clock		: IN STD_LOGIC  := '1';
+	       	q		: OUT STD_LOGIC_VECTOR (7 DOWNTO 0));
+	END COMPONENT;
 
 	SIGNAL read_ready, write_ready, read_s, write_s		      :STD_LOGIC;
 	SIGNAL writedata_left, writedata_right							:STD_LOGIC_VECTOR(23 DOWNTO 0);	
 	SIGNAL readdata_left, readdata_right							:STD_LOGIC_VECTOR(23 DOWNTO 0);	
 	SIGNAL reset															:STD_LOGIC;
-
+  SIGNAL ROM_NOTES1, ROM_NOTES2 : std_logic_vector(3 downto 0);
+  SIGNAL SAM_GEN_NOTE : std_logic_vector(14 downto 0);
 BEGIN
 
 	reset <= NOT(KEY(0));
@@ -56,10 +63,29 @@ BEGIN
 	cfg: audio_and_video_config PORT MAP (CLOCK_50, reset, I2C_SDAT, I2C_SCLK);
 	codec: audio_codec PORT MAP(CLOCK_50,reset,read_s,write_s,writedata_left, writedata_right,AUD_ADCDAT,AUD_BCLK,AUD_ADCLRCK,AUD_DACLRCK,read_ready, write_ready,readdata_left, readdata_right,AUD_DACDAT);
   
-  sample_gen : sample_generator port map(CLOCK_50 => CLOCK_50, NOTES => SW(12 downto 0), KEY => KEY, write_ready => write_ready, write_s => write_s,
+  sample_gen : sample_generator port map(CLOCK_50 => CLOCK_50, NOTES => SAM_GEN_NOTE, KEY => KEY, write_ready => write_ready, write_s => write_s,
                                          writedata_left => writedata_left, writedata_right => writedata_right, reset => reset);
   
        --- rest of your code goes here
-
-
+  
+  music : ROMDecoder PORT MAP (play => SW(17), clk => CLOCK_50, note1 => ROM_NOTES1, note2 => ROM_NOTES2);
+    
+  process(all) 
+    variable dec : std_logic_vector(14 downto 0) := (others => '0');
+    begin
+      
+      dec := (others => '0');
+      
+    if(SW(17)) then
+        dec(to_integer(14 - unsigned(ROM_NOTES1))) := '1';
+        dec(to_integer(14 - unsigned(ROM_NOTES2))) := '1';
+      
+    else
+      dec := SW(14 downto 0);
+    end if;
+    
+      SAM_GEN_NOTE <= dec; 
+      LEDR(14 downto 0) <= SAM_GEN_NOTE;
+  end process;
+ 
 END Behavior;

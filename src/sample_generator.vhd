@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 package sample_generator_decs is
   component sample_generator is
     port(
-       NOTES : in std_logic_vector(12 downto 0); 
+       NOTES : in std_logic_vector(14 downto 0); 
        CLOCK_50 : in std_logic;
        KEY : in std_logic_vector(3 downto 0);
        write_ready : in std_logic;
@@ -22,7 +22,7 @@ use work.NbitRegDecs.all;
 
 entity sample_generator is
   port(CLOCK_50 : in std_logic;
-       NOTES : in std_logic_vector(12 downto 0); 
+       NOTES : in std_logic_vector(14 downto 0); 
        KEY : in std_logic_vector(3 downto 0);
        write_ready : in std_logic;
        write_s : out std_logic;
@@ -47,6 +47,7 @@ architecture impl of sample_generator is
   constant Asamps : integer := 107; 
   constant Bsamps : integer := 95; 
   constant C2samps : integer := 90; 
+  constant D2samps : integer := 80; 
   
   constant Cshsamps : integer := 170;
   constant Eflsamps : integer := 152;
@@ -54,7 +55,7 @@ architecture impl of sample_generator is
   constant Gshsamps : integer := 113;
   constant Bflsamps : integer := 101; 
   
-  signal C,D,E,F,G,A,B,C2 : unsigned(writedata_left'LENGTH-1 downto 0) := (others => '0');
+  signal C,D,E,F,G,A,B,C2,D2 : unsigned(writedata_left'LENGTH-1 downto 0) := (others => '0');
   signal Csh,Efl,Fsh,GSh,Bfl : unsigned(writedata_left'LENGTH-1 downto 0) := (others => '0');
   
   
@@ -80,7 +81,7 @@ architecture impl of sample_generator is
   
           end if;
         
-        if(NOTES(12) = '1') then  
+        if(NOTES(13) = '1') then  
           if(note_highLow = '1') then
             C <= AMPPOS;
           else
@@ -111,7 +112,7 @@ architecture impl of sample_generator is
             else
           end if;
         
-        if(NOTES(11) = '1') then  
+        if(NOTES(12) = '1') then  
           if(note_highLow = '1') then
             Csh <= AMPPOS;
           else
@@ -141,7 +142,7 @@ architecture impl of sample_generator is
             else
           end if;
         
-        if(NOTES(10) = '1') then  
+        if(NOTES(11) = '1') then  
           if(note_highLow = '1') then
             D <= AMPPOS;
           else
@@ -172,7 +173,7 @@ architecture impl of sample_generator is
             else
           end if;
         
-        if(NOTES(9) = '1') then  
+        if(NOTES(10) = '1') then  
           if(note_highLow = '1') then
             Efl <= AMPPOS;
           else
@@ -202,7 +203,7 @@ architecture impl of sample_generator is
             else
           end if;
         
-        if(NOTES(8) = '1') then  
+        if(NOTES(9) = '1') then  
           if(note_highLow = '1') then
             E <= AMPPOS;
           else
@@ -232,7 +233,7 @@ architecture impl of sample_generator is
             else
           end if;
         
-        if(NOTES(7) = '1') then  
+        if(NOTES(8) = '1') then  
           if(note_highLow = '1') then
             F <= AMPPOS;
           else
@@ -262,7 +263,7 @@ architecture impl of sample_generator is
             else
           end if;
         
-        if(NOTES(6) = '1') then  
+        if(NOTES(7) = '1') then  
           if(note_highLow = '1') then
             Fsh <= AMPPOS;
           else
@@ -292,7 +293,7 @@ architecture impl of sample_generator is
             else
           end if;
         
-        if(NOTES(5) = '1') then  
+        if(NOTES(6) = '1') then  
           if(note_highLow = '1') then
             G <= AMPPOS;
           else
@@ -321,7 +322,7 @@ architecture impl of sample_generator is
             else
           end if;
         
-        if(NOTES(4) = '1') then  
+        if(NOTES(5) = '1') then  
           if(note_highLow = '1') then
             Gsh <= AMPPOS;
           else
@@ -350,7 +351,7 @@ architecture impl of sample_generator is
             else
           end if;
         
-        if(NOTES(3) = '1') then  
+        if(NOTES(4) = '1') then  
           if(note_highLow = '1') then
             A <= AMPPOS;
           else
@@ -379,7 +380,7 @@ architecture impl of sample_generator is
             else
           end if;
         
-        if(NOTES(2) = '1') then  
+        if(NOTES(3) = '1') then  
           if(note_highLow = '1') then
             Bfl <= AMPPOS;
           else
@@ -408,7 +409,7 @@ architecture impl of sample_generator is
             else
           end if;
         
-        if(NOTES(1) = '1') then  
+        if(NOTES(2) = '1') then  
           if(note_highLow = '1') then
             B <= AMPPOS;
           else
@@ -438,7 +439,7 @@ architecture impl of sample_generator is
             else
           end if;
         
-        if(NOTES(0) = '1') then  
+        if(NOTES(1) = '1') then  
           if(note_highLow = '1') then
             C2 <= AMPPOS;
           else
@@ -450,8 +451,37 @@ architecture impl of sample_generator is
       end if;
     end process;
     
+    process(CLOCK_50) 
+      
+      variable note_counter : integer := 0;
+      variable note_highLow : std_logic := '0';
+      
+      begin
+        if(rising_edge(CLOCK_50)) then
+          if(write_ready = '1') then
+            if(note_counter = D2samps) then
+              note_highLow := not note_highLow;
+              note_counter := 0;
+            else
+              note_counter := note_counter + 1;
+            end if;     
+            else
+          end if;
+        
+        if(NOTES(0) = '1') then  
+          if(note_highLow = '1') then
+            D2 <= AMPPOS;
+          else
+            D2 <= AMPNEG;
+          end if;
+        else
+          D2 <= (others => '0');
+        end if;
+      end if;
+    end process;
+    
     write_s <= write_ready;
-    writedata <= std_logic_vector(C + Csh + D + Efl + E + F + Fsh + G + Gsh + A + Bfl + B + C + C2);
+    writedata <= std_logic_vector(C + Csh + D + Efl + E + F + Fsh + G + Gsh + A + Bfl + B + C2 + D2);
     writedata_left <= writedata;
     writedata_right <= writedata;
     

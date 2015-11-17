@@ -1,0 +1,66 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+package ROMDecoder_decs is
+  component ROMDecoder is
+    port(play : in std_logic; 
+       clk : in std_logic;
+       note1 : out std_logic_vector(3 downto 0);
+       note2 : out std_logic_vector(3 downto 0));
+  end component;
+end package;
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity ROMDecoder is
+  port(play : in std_logic; 
+       clk : in std_logic;
+       note1 : out std_logic_vector(3 downto 0);
+       note2 : out std_logic_vector(3 downto 0));
+  
+end entity; 
+
+architecture impl of ROMDecoder is
+  component AuldLangSyne is PORT
+	(
+		address		: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
+		clock		: IN STD_LOGIC  := '1';
+		q		: OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
+	);
+	end component;
+	
+	signal address_sig : std_logic_vector(7 downto 0); 
+	signal rom_out : std_logic_vector(7 downto 0); 
+	
+  begin
+  
+  AuldLangSyne_inst : AuldLangSyne PORT MAP (address	 => address_sig, clock	 => clk, q	 => rom_out);
+    
+    process(clk) 
+      variable counter : integer := 0;
+      variable currNote : integer := 0;
+    begin 
+      if(rising_edge(clk)) then
+        if(play = '0') then
+          counter := 0;
+          currNote := 0;
+        else
+          if(counter = 9500000) then
+            counter := 0;
+            currNote := currNote + 1;
+          else
+            counter := counter + 1;
+            currNote := currNote; 
+          end if;
+        end if; 
+      end if;
+      address_sig <= std_logic_vector(to_unsigned(currNote, 8));
+    end process; 
+    
+    note1 <= rom_out(7 downto 4);
+    note2 <= rom_out(3 downto 0);
+
+end impl;
